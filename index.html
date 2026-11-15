@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#061324">
+  <meta name="description" content="20-metre STEM Racing VR drag strip and engineering design challenge, for Meta Quest 2 and desktop.">
+  <title>STEM Racing | VR Design Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="scene" aria-label="Interactive 3D STEM Racing track"></div>
+  <div class="topbrand">
+    <div class="brandchip">VR <span class="live-dot"></span> DESIGN LAB</div>
+    <h1>STEM<span>RACING</span></h1>
+    <p>20 METRES. TWO LANES. ONE ENGINEERING CHALLENGE.</p>
+  </div>
+  <aside id="garage" class="panel garage">
+    <div class="panel-topline"><span>01 / ENGINEERING</span><span class="muted">YOUR CAR</span></div>
+    <h2>Design garage</h2>
+    <p class="sub">Build for speed. Small improvements can make a big difference.</p>
+    <div class="setting">
+      <div class="setting-label"><label for="mass">Chassis mass</label><strong id="massValue">55 g</strong></div>
+      <input id="mass" type="range" min="45" max="70" step="1" value="55">
+      <div class="scale"><span>45 g · lightweight</span><span>70 g · robust</span></div>
+    </div>
+    <div class="setting">
+      <div class="setting-label"><label for="aero">Aerodynamic body</label><span class="pill">DRAG</span></div>
+      <select id="aero">
+        <option value="0">Standard profile</option>
+        <option value="1" selected>Streamlined (+1 g)</option>
+        <option value="2">Race profile (+3 g)</option>
+      </select>
+    </div>
+    <div class="setting">
+      <div class="setting-label"><label for="wheels">Wheel &amp; axle setup</label><span class="pill">FRICTION</span></div>
+      <select id="wheels">
+        <option value="0">Standard bearings</option>
+        <option value="1" selected>Low-friction (+2 g)</option>
+        <option value="2">Precision bearings (+4 g)</option>
+      </select>
+    </div>
+    <div class="metrics">
+      <div><small>TOTAL MASS</small><strong id="totalMass">58 g</strong></div>
+      <div><small>EFFECTIVE CdA</small><strong id="dragArea">7.8 cm²</strong></div>
+      <div><small>ROLLING LOSS</small><strong id="rollingLoss">0.17 N</strong></div>
+    </div>
+    <button id="stage" class="main-button">STAGE NEXT RACE <span>↗</span></button>
+    <button id="launch" class="secondary-button">LAUNCH CAR <span>SPACE</span></button>
+    <p class="tip">Launch only when the green light appears. Early launches count as false starts.</p>
+  </aside>
+  <aside class="panel timing">
+    <div class="panel-topline"><span>02 / RACE CONTROL</span><span class="muted">LIVE</span></div>
+    <div id="raceStatus" class="status">READY TO STAGE</div>
+    <div id="statusText" class="hint">Choose a design, then stage the race.</div>
+    <div class="timing-cards">
+      <div class="timing-card cyan"><span>YOUR CAR · LANE 1</span><strong id="yourTime">–.–––</strong><small>CAR TIME / SECONDS</small></div>
+      <div class="timing-card pink"><span>OPPONENT · LANE 2</span><strong id="cpuTime">–.–––</strong><small>CAR TIME / SECONDS</small></div>
+    </div>
+    <div class="split"><span>Your reaction</span><strong id="reactionTime">–.––– s</strong></div>
+    <div class="split"><span>Your finish speed</span><strong id="finishSpeed">– km/h</strong></div>
+    <div class="split"><span>Best car time</span><strong id="bestTime">No record yet</strong></div>
+    <div id="verdict" class="verdict">Test your ideas. Change one variable. Race again.</div>
+    <button id="reset" class="subtle-button">↺ Reset design</button>
+  </aside>
+  <footer>
+    <div><b>DESKTOP</b> Click <b>Stage</b>, press <kbd>Space</kbd> on green. Drag to orbit, scroll to zoom.</div>
+    <div><b>QUEST 2</b> Select <b>ENTER VR</b>. Point and trigger to operate the in-world boards.</div>
+    <div class="footnote">Illustrative physics model, not official STEM Racing timing or technical regulations.</div>
+  </footer>
+  <div id="loading" role="status">BUILDING THE VR RACE TRACK…</div>
+  <script>
+    window.addEventListener('error', () => {
+      const loader = document.getElementById('loading');
+      if (loader && !loader.classList.contains('hidden')) {
+        loader.textContent = '3D ENGINE UNAVAILABLE. CHECK YOUR INTERNET CONNECTION AND RELOAD.';
+      }
+    });
+  </script>
+  <script type="module" src="game.js"></script>
+</body>
+</html>
