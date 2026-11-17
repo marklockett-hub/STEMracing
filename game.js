@@ -1,5 +1,5 @@
 /**
- * STEM Racing VR Design Lab, v1.0
+ * TSS STEM Racing VR Design Lab, v2.0
  * Browser-based immersive WebXR prototype for Meta Quest 2, with desktop support.
  * Educational vehicle physics are intentionally illustrative, not competition calibrated.
  * Dependencies: Three.js ES modules loaded using index.html importmap.
@@ -201,7 +201,7 @@ for (const x of [-1.9, 1.9]) {
 block(4.05, .55, .22, '#0d2d43', 0, 2.91, START_Z - 20);
 const finishSign = createSign(3.75, .45, 960, 140);
 finishSign.ctx.fillStyle = '#071f32'; finishSign.ctx.fillRect(0, 0, 960, 140);
-text(finishSign.ctx, '20 METRE FINISH', 480, 70, 77, '#87ebff', 'center', 900);
+text(finishSign.ctx, 'TSS  //  20 METRE FINISH', 480, 70, 65, '#f0d38a', 'center', 900);
 finishSign.texture.needsUpdate = true;
 finishSign.mesh.position.set(0, 2.92, START_Z - 19.88);
 scene.add(finishSign.mesh);
@@ -222,7 +222,7 @@ scene.add(grid);
 for (const x of [-2.25, 2.25]) block(.17, 2.6, .17, '#23536d', x, 1.24, START_Z - .45);
 block(4.65, .27, .3, '#173d5b', 0, 2.49, START_Z - .45);
 const banner = createSign(3.45, .34);
-text(banner.ctx, 'STEM RACING  //  START GANTRY', 512, 250, 61, '#baf5ff', 'center', 900);
+text(banner.ctx, 'TSS  //  STEM RACING', 512, 250, 84, '#f0d38a', 'center', 900);
 banner.texture.needsUpdate = true;
 banner.mesh.position.set(0, 2.49, START_Z - .25);
 scene.add(banner.mesh);
@@ -304,8 +304,8 @@ function makePanel(position, header, subtitle, color) {
   t.mesh.position.z = .038; group.add(t.mesh);
   return group;
 }
-const garageBoard = makePanel([-2.05, 1.67, -2.30], 'DESIGN GARAGE', 'ENGINEER YOUR RACE CAR', '#4fe7ff');
-const raceBoard = makePanel([2.05, 1.67, -2.30], 'RACE CONTROL', '20 M / TWO-LANE CHALLENGE', '#ff749c');
+const garageBoard = makePanel([-2.05, 1.67, -2.30], 'TSS STEM RACING', 'DESIGN GARAGE  /  ENGINEER YOUR CAR', '#d6b15f');
+const raceBoard = makePanel([2.05, 1.67, -2.30], 'TSS STEM RACING', 'RACE CONTROL  /  20 M CHALLENGE', '#d6b15f');
 function makeDynamicDisplay(parent, w, h, pos, painter) {
   const display = createSign(w, h, 720, 360);
   display.mesh.position.set(...pos); parent.add(display.mesh);
@@ -313,12 +313,13 @@ function makeDynamicDisplay(parent, w, h, pos, painter) {
   return repaint;
 }
 const repaintGarage = makeDynamicDisplay(garageBoard, 1.50, .72, [0, .46, .075], (ctx) => {
-  rounded(ctx, 5, 5, 710, 350, 27, '#143852', '#29617a');
+  rounded(ctx, 5, 5, 710, 350, 27, '#143852', '#ad8a4b');
   const specs = design();
   text(ctx, `CHASSIS: ${state.mass} g  |  TOTAL: ${specs.massGrams} g`, 32, 54, 33, '#ecfaff');
-  text(ctx, `BODY: ${AERO[state.aero].name.toUpperCase()}`, 32, 128, 32, '#60dfff');
-  text(ctx, `WHEELS: ${WHEELS[state.wheels].name.toUpperCase()}`, 32, 198, 32, '#60dfff');
+  text(ctx, `BODY: ${AERO[state.aero].name.toUpperCase()}`, 32, 128, 32, '#f0d38a');
+  text(ctx, `WHEELS: ${WHEELS[state.wheels].name.toUpperCase()}`, 32, 198, 32, '#f0d38a');
   text(ctx, `CdA ${String((specs.cda * 10000).toFixed(1))} cm²  •  ${specs.rolling.toFixed(2)} N`, 32, 280, 28, '#b2d5e6');
+  text(ctx, 'AIM + TRIGGER: SELECT  |  GRIP: RECENTRE', 32, 328, 22, '#f0d38a');
 });
 const repaintRace = makeDynamicDisplay(raceBoard, 1.52, .80, [0, .42, .075], (ctx) => {
   rounded(ctx, 5, 5, 710, 350, 27, '#143048', '#386984');
@@ -329,6 +330,7 @@ const repaintRace = makeDynamicDisplay(raceBoard, 1.52, .80, [0, .42, .075], (ct
   text(ctx, `PINK     ${fmt(red)} s`, 32, 215, 50, '#ff8ead');
   const react = state.player?.startedAt != null ? (state.player.startedAt - state.greenAt) / 1000 : NaN;
   text(ctx, `REACTION  ${fmt(react)} s`, 32, 295, 28, '#d1eaff');
+  text(ctx, 'AIM + TRIGGER: SELECT  |  GRIP: RECENTRE', 32, 336, 19, '#f0d38a');
 });
 function makeButton(parent, label, x, y, w, h, action, accent = '#19708a') {
   const t = createSign(w, h, 560, 180);
@@ -352,6 +354,57 @@ makeButton(garageBoard, 'WHEELS  ▶', .41, -.88, .69, .30, 'wheelUp');
 makeButton(raceBoard, 'STAGE RACE', 0, -.36, 1.42, .40, 'stage', '#087a95');
 makeButton(raceBoard, 'LAUNCH / TRIGGER', 0, -.82, 1.42, .40, 'launch', '#8a2a5b');
 
+// QUEST 2 PIT-WALL CONSOLE -------------------------------------------------
+// Ordinary HTML panels cannot appear in immersive WebXR. Display the
+// interactive three.js control boards directly ahead of the headset.
+// The console is anchored once per entry / grip press, not head-locked.
+makeButton(garageBoard, 'RACE CONTROL  >>', 0, 1.26, 1.44, .23, 'showRace', '#a78039');
+makeButton(raceBoard, '<<  DESIGN GARAGE', 0, 1.26, 1.44, .23, 'showGarage', '#a78039');
+const vrConsole = new THREE.Group();
+scene.add(vrConsole);
+vrConsole.add(garageBoard, raceBoard);
+garageBoard.position.set(0, 0, 0);
+raceBoard.position.set(0, 0, 0);
+vrConsole.scale.setScalar(.83);
+vrConsole.visible = false;
+let vrView = 'garage';
+let vrConsoleNeedsPlacement = false;
+const vrHeadPos = new THREE.Vector3();
+const vrHeadForward = new THREE.Vector3();
+function showVRView(view) {
+  vrView = view === 'race' ? 'race' : 'garage';
+  garageBoard.visible = vrView === 'garage';
+  raceBoard.visible = vrView === 'race';
+  vrConsole.visible = renderer.xr.isPresenting && !vrConsoleNeedsPlacement;
+}
+function placeVRConsole() {
+  if (!renderer.xr.isPresenting) return;
+  const head = renderer.xr.getCamera();
+  head.updateMatrixWorld(true);
+  head.getWorldPosition(vrHeadPos);
+  head.getWorldDirection(vrHeadForward);
+  vrHeadForward.y = 0; // Vertical UI regardless of headset pitch.
+  if (vrHeadForward.lengthSq() < .0001) vrHeadForward.set(0, 0, -1);
+  vrHeadForward.normalize();
+  vrConsole.position.copy(vrHeadPos).addScaledVector(vrHeadForward, 1.65);
+  vrConsole.position.y = Math.max(.92, vrHeadPos.y - .08);
+  // Plane default front normal is +Z; face it back towards the viewer.
+  vrConsole.rotation.set(0, Math.atan2(-vrHeadForward.x, -vrHeadForward.z), 0);
+  vrConsole.updateMatrixWorld(true);
+  vrConsoleNeedsPlacement = false;
+  showVRView(vrView);
+}
+renderer.xr.addEventListener('sessionstart', () => {
+  vrConsoleNeedsPlacement = true;
+  vrConsole.visible = false;
+  vrView = 'garage';
+});
+renderer.xr.addEventListener('sessionend', () => {
+  vrConsoleNeedsPlacement = false;
+  vrConsole.visible = false;
+});
+
+
 // XR controllers: point to an in-world panel and use the trigger.
 const raycaster = new THREE.Raycaster();
 const rotation = new THREE.Matrix4();
@@ -361,6 +414,7 @@ const controllerLights = [];
 for (let i = 0; i < 2; i++) {
   const controller = renderer.xr.getController(i);
   controller.addEventListener('selectstart', () => selectVR(controller));
+  controller.addEventListener('squeezestart', () => { vrConsoleNeedsPlacement = true; vrConsole.visible = false; });
   const ray = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -8)]),
     new THREE.LineBasicMaterial({ color: '#62efff', opacity: .65, transparent: true })
@@ -374,17 +428,24 @@ function hitTarget(controller) {
   tempDir.set(0, 0, -1).applyMatrix4(rotation);
   raycaster.set(tempPos, tempDir);
   raycaster.far = 9;
-  return raycaster.intersectObjects(vrTargets, false)[0]?.object || null;
+  // Exclude controls on the inactive board, despite overlapping geometry.
+  const visibleTargets = vrTargets.filter((obj) => {
+    for (let node = obj; node; node = node.parent) if (!node.visible) return false;
+    return true;
+  });
+  return raycaster.intersectObjects(visibleTargets, false)[0]?.object || null;
 }
 function selectVR(controller) {
   const target = hitTarget(controller);
   if (target) {
     doAction(target.userData.action);
-  } else {
-    doLaunch(); // trigger in free space also releases the car
+  } else if (vrView === 'race') {
+    doLaunch(); // free-space trigger can launch from Race Control
   }
 }
 function doAction(action) {
+  if (action === 'showRace') { showVRView('race'); sound(640, .06); return; }
+  if (action === 'showGarage') { showVRView('garage'); sound(640, .06); return; }
   if (action === 'stage') return stageRace();
   if (action === 'launch') return doLaunch();
   if (['massDown','massUp','aeroDown','aeroUp','wheelDown','wheelUp'].includes(action)) {
@@ -582,6 +643,13 @@ const loading = $('loading'); loading.classList.add('hidden');
 loading.addEventListener('transitionend', () => loading.remove(), { once: true });
 let previous = performance.now();
 renderer.setAnimationLoop((now) => {
+  // The first XR animation frame has the headset's actual tracked pose.
+  if (renderer.xr.isPresenting) {
+    if (vrConsoleNeedsPlacement) placeVRConsole();
+    for (let i = 0; i < 2; i++) {
+      controllerLights[i].material.color.set(hitTarget(renderer.xr.getController(i)) ? '#f6c66d' : '#62efff');
+    }
+  }
   const dt = Math.min(.05, Math.max(0, (now - previous) / 1000));
   previous = now;
   if (!renderer.xr.isPresenting) controls.update();
