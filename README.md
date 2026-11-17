@@ -28,9 +28,12 @@ WebXR requires a **secure HTTPS address** (ordinary HTTP from another device on 
 2. Upload `index.html`, `game.js`, and `styles.css` into the repository root.
 3. In repository Settings > Pages, set **Build and deployment** to **Deploy from a branch**, choose `main` and `/ (root)`, then save.
 4. Once GitHub Pages provides an `https://...github.io/...` address, open it with **Meta Quest Browser** on your Quest 2.
-5. Select **ENTER VR**. You will stand beside the start of a virtual miniature racing track.
-6. Point the controller laser at the **DESIGN GARAGE** board and squeeze the trigger to change mass, aerodynamics and wheel settings. Select **STAGE RACE** on the **RACE CONTROL** board.
-7. After the green light, aim away from the interface and squeeze the trigger, or select **LAUNCH / TRIGGER**. Watch both cars finish. Repeat to compare designs.
+5. Select **ENTER VR**. A gold-and-navy **TSS STEM RACING** 3D garage console should appear directly in front of your headset. The regular desktop panels deliberately disappear in immersive VR.
+6. Point either Quest controller at the **MASS − / MASS +**, **AERO ◀ / ▶**, and **WHEELS ◀ / ▶** buttons and press its **index-finger trigger** to change the car.
+7. Select **RACE CONTROL >>** above the garage console, then point and trigger **STAGE RACE**. After the green light, use **LAUNCH / TRIGGER**, or press the trigger while aiming away from the race board.
+8. Select **<< DESIGN GARAGE** to return to car adjustments and rerun the experiment. If the console is out of view, **press either controller's grip button** to recenter it in front of your headset.
+
+**Quest troubleshooting:** If the old boards or generic STEM Racing sign still appear, close the VR session and reload the site in Quest Browser (or open the URL with `?v=tss-vr2`). When using the headset, point and press the **trigger**, rather than using the A/B buttons.
 
 The **ENTER VR** button is only offered when the browser supports immersive WebXR. Meta Quest Browser supports WebXR on Quest 2. If the button isn't available, check that the address uses HTTPS and that you're using the headset's browser. The app runs as a website and is not a native `.apk` install.
 
@@ -53,7 +56,7 @@ The effective aerodynamic drag area in the design panel is *CdA* (drag coefficie
 ## Technical notes
 
 - Built with Three.js WebXR, not Unity. No Quest developer mode needed for the hosted browser version.
-- The desktop interface overlays the track; in VR, the options and controls are on two 3D boards.
+- The desktop interface overlays the track; in VR, a single TSS-branded 3D console switches between the Design Garage and Race Control views, with trigger-based selections and grip recentering.
 - The best **car time** is stored in that browser's local storage (if allowed).
 - The opponent has slightly variable simulated reaction time.
 - The default track length is set in `game.js` using `TRACK_LENGTH = 20`.
