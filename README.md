@@ -28,12 +28,9 @@ WebXR requires a **secure HTTPS address** (ordinary HTTP from another device on 
 2. Upload `index.html`, `game.js`, and `styles.css` into the repository root.
 3. In repository Settings > Pages, set **Build and deployment** to **Deploy from a branch**, choose `main` and `/ (root)`, then save.
 4. Once GitHub Pages provides an `https://...github.io/...` address, open it with **Meta Quest Browser** on your Quest 2.
-5. Select **ENTER VR**. A gold-and-navy **TSS STEM RACING** 3D garage console should appear directly in front of your headset. The regular desktop panels deliberately disappear in immersive VR.
-6. Point either Quest controller at the **MASS − / MASS +**, **AERO ◀ / ▶**, and **WHEELS ◀ / ▶** buttons and press its **index-finger trigger** to change the car.
-7. Select **RACE CONTROL >>** above the garage console, then point and trigger **STAGE RACE**. After the green light, use **LAUNCH / TRIGGER**, or press the trigger while aiming away from the race board.
-8. Select **<< DESIGN GARAGE** to return to car adjustments and rerun the experiment. If the console is out of view, **press either controller's grip button** to recenter it in front of your headset.
-
-**Quest troubleshooting:** If the old boards or generic STEM Racing sign still appear, close the VR session and reload the site in Quest Browser (or open the URL with `?v=tss-vr2`). When using the headset, point and press the **trigger**, rather than using the A/B buttons.
+5. Select **ENTER VR**. You will stand beside the start of a virtual miniature racing track.
+6. Point the controller laser at the **DESIGN GARAGE** board and squeeze the trigger to change mass, aerodynamics and wheel settings. Select **STAGE RACE** on the **RACE CONTROL** board.
+7. After the green light, aim away from the interface and squeeze the trigger, or select **LAUNCH / TRIGGER**. Watch both cars finish. Repeat to compare designs.
 
 The **ENTER VR** button is only offered when the browser supports immersive WebXR. Meta Quest Browser supports WebXR on Quest 2. If the button isn't available, check that the address uses HTTPS and that you're using the headset's browser. The app runs as a website and is not a native `.apk` install.
 
@@ -56,7 +53,7 @@ The effective aerodynamic drag area in the design panel is *CdA* (drag coefficie
 ## Technical notes
 
 - Built with Three.js WebXR, not Unity. No Quest developer mode needed for the hosted browser version.
-- The desktop interface overlays the track; in VR, a single TSS-branded 3D console switches between the Design Garage and Race Control views, with trigger-based selections and grip recentering.
+- The desktop interface overlays the track; in VR, one visible, switchable 3D console contains the Design Garage and Race Control.
 - The best **car time** is stored in that browser's local storage (if allowed).
 - The opponent has slightly variable simulated reaction time.
 - The default track length is set in `game.js` using `TRACK_LENGTH = 20`.
@@ -73,3 +70,27 @@ A real-world data mode importing CSV times from track timing gear, CAD/GLB custo
 - Meta WebXR HTTPS requirements: https://developers.meta.com/vr/documentation/web/port-vr-xr/
 - Three.js VRButton: https://threejs.org/docs/pages/VRButton.html
 - Official STEM Racing competition guidance: check the current guidebooks and regulations for your own class/region.
+
+
+## Latest update
+
+- Added the actual TSS logo to the start gantry, finish gantry, trackside sponsor boards and both race cars.
+- Embedded the logo directly in the game code so it travels with the project files.
+
+
+## Version 1.2 update
+
+- Swapped the crest-only branding for the full TSS STEM Racing logo.
+- Added fuller TSS-style navy, gold, white and red race-car liveries.
+- Added more sponsor-style pit-wall boards, feather flags and track lighting for a more polished event atmosphere.
+- Included the new logo file as `tss_stem_racing_logo.jpg`.
+
+
+## Version 3: Quest controls retained
+
+- Full TSS STEM Racing team logo on cars, start/finish gantries, pit-wall boards and VR console.
+- Race cars have TSS navy, gold, red and white team liveries.
+- New sponsor-style advertising boards, feather flags, pit-wall banners and lightweight glowing track fixtures.
+- The Quest 2 Design Garage and Race Control views are 3D panels placed in front of the headset.
+- Point + trigger to adjust mass, aerodynamics and wheels. Select RACE CONTROL to stage and launch. Press a controller grip to recenter the panel.
+- The real TSS team logo is included as `tss_stem_racing_logo.jpg` (compressed for Meta Quest Browser).
