@@ -643,16 +643,17 @@ const loading = $('loading'); loading.classList.add('hidden');
 loading.addEventListener('transitionend', () => loading.remove(), { once: true });
 let previous = performance.now();
 renderer.setAnimationLoop((now) => {
-  // The first XR animation frame has the headset's actual tracked pose.
+  const dt = Math.min(.05, Math.max(0, (now - previous) / 1000));
+  previous = now;
+  if (!renderer.xr.isPresenting) controls.update();
+  tick(now, dt);
+  renderer.render(scene, camera);
+  // Renderer updates the XR cameras during render(). Placing the console
+  // afterwards uses the tracked headset pose, not a stale/default pose.
   if (renderer.xr.isPresenting) {
     if (vrConsoleNeedsPlacement) placeVRConsole();
     for (let i = 0; i < 2; i++) {
       controllerLights[i].material.color.set(hitTarget(renderer.xr.getController(i)) ? '#f6c66d' : '#62efff');
     }
   }
-  const dt = Math.min(.05, Math.max(0, (now - previous) / 1000));
-  previous = now;
-  if (!renderer.xr.isPresenting) controls.update();
-  tick(now, dt);
-  renderer.render(scene, camera);
 });
