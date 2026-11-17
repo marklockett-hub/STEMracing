@@ -1,5 +1,5 @@
 /**
- * TSS STEM Racing VR Design Lab, v2.0
+ * TSS STEM Racing VR Design Lab, v3.0
  * Browser-based immersive WebXR prototype for Meta Quest 2, with desktop support.
  * Educational vehicle physics are intentionally illustrative, not competition calibrated.
  * Dependencies: Three.js ES modules loaded using index.html importmap.
@@ -63,6 +63,24 @@ const sound = (() => {
     } catch (_) { /* audio unavailable, continue without sound */ }
   };
 })();
+
+// TSS BRANDING ---------------------------------------------------------------
+const TSS_LOGO_PATH = 'tss_stem_racing_logo.jpg';
+const TSS_LOGO_IMAGE = new Image();
+let tssLogoReady = false;
+const tssLogoListeners = [];
+TSS_LOGO_IMAGE.onload = () => {
+  tssLogoReady = true;
+  while (tssLogoListeners.length) {
+    const callback = tssLogoListeners.shift();
+    if (callback) callback();
+  }
+};
+TSS_LOGO_IMAGE.src = TSS_LOGO_PATH;
+function onTSSLogoReady(callback) {
+  if (tssLogoReady) callback();
+  else tssLogoListeners.push(callback);
+}
 
 // SCENE AND RENDERER ---------------------------------------------------------
 const scene = new THREE.Scene();
@@ -154,6 +172,27 @@ function rounded(ctx, x, y, w, h, r, fill, stroke) {
   ctx.fillStyle = fill; ctx.fill();
   if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 3; ctx.stroke(); }
 }
+function drawContainImage(ctx, image, x, y, w, h) {
+  const imgRatio = image.width / image.height;
+  const boxRatio = w / h;
+  let drawW = w, drawH = h, drawX = x, drawY = y;
+  if (imgRatio > boxRatio) {
+    drawH = w / imgRatio;
+    drawY = y + (h - drawH) / 2;
+  } else {
+    drawW = h * imgRatio;
+    drawX = x + (w - drawW) / 2;
+  }
+  ctx.drawImage(image, drawX, drawY, drawW, drawH);
+  return { x: drawX, y: drawY, w: drawW, h: drawH };
+}
+function tssLogoMaterial() {
+  const texture = new THREE.TextureLoader().load(TSS_LOGO_PATH);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshBasicMaterial({
+    map: texture, side: THREE.DoubleSide, depthWrite: false, toneMapped: false
+  });
+}
 
 // PHYSICAL RACE TRACK --------------------------------------------------------
 const platform = block(3.9, .18, 23.5, '#223146', 0, -.13, START_Z - 10.25);
@@ -199,10 +238,19 @@ for (const x of [-1.9, 1.9]) {
     new THREE.MeshBasicMaterial({ color: '#32adce' }));
 }
 block(4.05, .55, .22, '#0d2d43', 0, 2.91, START_Z - 20);
-const finishSign = createSign(3.75, .45, 960, 140);
-finishSign.ctx.fillStyle = '#071f32'; finishSign.ctx.fillRect(0, 0, 960, 140);
-text(finishSign.ctx, 'TSS  //  20 METRE FINISH', 480, 70, 65, '#f0d38a', 'center', 900);
-finishSign.texture.needsUpdate = true;
+const finishSign = createSign(3.85, .58, 1280, 320);
+function repaintFinishSign() {
+  const { ctx, el, texture } = finishSign;
+  ctx.clearRect(0, 0, el.width, el.height);
+  ctx.fillStyle = '#f7f8fb'; ctx.fillRect(0, 0, el.width, el.height);
+  ctx.strokeStyle = '#06245a'; ctx.lineWidth = 16; ctx.strokeRect(10, 10, el.width - 20, el.height - 20);
+  if (tssLogoReady) drawContainImage(ctx, TSS_LOGO_IMAGE, 24, 16, 510, 286);
+  text(ctx, '20 METRE FINISH', 910, 112, 84, '#06245a', 'center', 900);
+  text(ctx, 'DESIGN  •  BUILD  •  TEST  •  COMPETE', 910, 222, 34, '#d0191c', 'center', 800);
+  texture.needsUpdate = true;
+}
+repaintFinishSign();
+onTSSLogoReady(repaintFinishSign);
 finishSign.mesh.position.set(0, 2.92, START_Z - 19.88);
 scene.add(finishSign.mesh);
 // arena edge, stands and overhead accent lighting
@@ -221,11 +269,116 @@ scene.add(grid);
 // decorative first gantry
 for (const x of [-2.25, 2.25]) block(.17, 2.6, .17, '#23536d', x, 1.24, START_Z - .45);
 block(4.65, .27, .3, '#173d5b', 0, 2.49, START_Z - .45);
-const banner = createSign(3.45, .34);
-text(banner.ctx, 'TSS  //  STEM RACING', 512, 250, 84, '#f0d38a', 'center', 900);
-banner.texture.needsUpdate = true;
-banner.mesh.position.set(0, 2.49, START_Z - .25);
+const banner = createSign(3.95, .72, 1520, 420);
+function repaintStartBanner() {
+  const { ctx, el, texture } = banner;
+  ctx.clearRect(0, 0, el.width, el.height);
+  ctx.fillStyle = '#f9fafc'; ctx.fillRect(0, 0, el.width, el.height);
+  ctx.strokeStyle = '#06245a'; ctx.lineWidth = 18; ctx.strokeRect(10, 10, el.width - 20, el.height - 20);
+  if (tssLogoReady) drawContainImage(ctx, TSS_LOGO_IMAGE, 28, 18, 650, 384);
+  text(ctx, 'WELCOME TO TSS STEM RACING', 1088, 132, 76, '#06245a', 'center', 900);
+  text(ctx, 'START GANTRY', 1088, 248, 60, '#d0191c', 'center', 900);
+  text(ctx, 'DESIGN  •  BUILD  •  TEST  •  COMPETE', 1088, 336, 34, '#234e7a', 'center', 800);
+  texture.needsUpdate = true;
+}
+repaintStartBanner();
+onTSSLogoReady(repaintStartBanner);
+banner.mesh.position.set(0, 2.50, START_Z - .25);
 scene.add(banner.mesh);
+
+// event atmosphere and sponsor boards
+const sponsorBoards = [];
+function createSponsorBoard(x, z, rotationY, headline, subline) {
+  const poleMat = mat('#22455f', { roughness: .58, metalness: .28 });
+  block(.06, .82, .06, '#264b67', x - .55 * Math.cos(rotationY), .46, z + .55 * Math.sin(rotationY), poleMat);
+  block(.06, .82, .06, '#264b67', x + .55 * Math.cos(rotationY), .46, z - .55 * Math.sin(rotationY), poleMat);
+  const sign = createSign(1.45, .64, 1160, 520);
+  sign.mesh.position.set(x, .90, z);
+  sign.mesh.rotation.y = rotationY;
+  scene.add(sign.mesh);
+  sponsorBoards.push({ sign, headline, subline });
+}
+function repaintSponsorBoard(entry) {
+  const { sign, headline, subline } = entry;
+  const { ctx, el, texture } = sign;
+  ctx.clearRect(0, 0, el.width, el.height);
+  const grad = ctx.createLinearGradient(0, 0, el.width, el.height);
+  grad.addColorStop(0, '#fbfcfe');
+  grad.addColorStop(1, '#eef3f9');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, el.width, el.height);
+  ctx.strokeStyle = '#06245a'; ctx.lineWidth = 14; ctx.strokeRect(10, 10, el.width - 20, el.height - 20);
+  if (tssLogoReady) drawContainImage(ctx, TSS_LOGO_IMAGE, 28, 38, 460, 256);
+  text(ctx, headline, 812, 150, 52, '#06245a', 'center', 900);
+  text(ctx, subline, 812, 244, 34, '#d0191c', 'center', 800);
+  text(ctx, 'THE SOUTHPORT SCHOOL', 812, 342, 28, '#234e7a', 'center', 700);
+  text(ctx, 'STEM RACING TEAM', 812, 396, 34, '#06245a', 'center', 900);
+  texture.needsUpdate = true;
+}
+const sponsorData = [
+  [-3.25, START_Z - 2.8, .58, 'TEAM GARAGE', 'THE SOUTHPORT SCHOOL'],
+  [3.25, START_Z - 5.5, -.58, 'DESIGN  •  BUILD', 'ENGINEERING IN ACTION'],
+  [-3.25, START_Z - 8.8, .58, 'TEST  •  COMPETE', 'RACE DAY PERFORMANCE'],
+  [3.25, START_Z - 12.2, -.58, 'TSS STEM RACING', 'GOLD COAST'],
+  [-3.25, START_Z - 15.8, .58, 'SCHOOL RACING TEAM', 'DESIGN  BUILD  TEST'],
+  [3.25, START_Z - 18.5, -.58, 'INNOVATE TO WIN', 'TEAM TSS'],
+];
+sponsorData.forEach(([x, z, rot, headline, subline]) => createSponsorBoard(x, z, rot, headline, subline));
+function repaintSponsorBoards() { sponsorBoards.forEach(repaintSponsorBoard); }
+repaintSponsorBoards();
+onTSSLogoReady(repaintSponsorBoards);
+
+function createPitWallBanner(x, z, label) {
+  const sign = createSign(1.62, .28, 1180, 220);
+  const { ctx, el, texture } = sign;
+  ctx.fillStyle = '#06245a'; ctx.fillRect(0, 0, el.width, el.height);
+  ctx.fillStyle = '#d0191c'; ctx.fillRect(0, el.height - 28, el.width, 28);
+  text(ctx, 'TSS STEM RACING', 60, 76, 48, '#ffffff', 'left', 900);
+  text(ctx, label, 960, 76, 30, '#f0d38a', 'center', 800);
+  texture.needsUpdate = true;
+  sign.mesh.position.set(x, .26, z);
+  sign.mesh.rotation.y = x < 0 ? Math.PI / 2 : -Math.PI / 2;
+  scene.add(sign.mesh);
+}
+for (let i = 0; i < 5; i++) {
+  const z = START_Z - 2.1 - i * 3.6;
+  createPitWallBanner(-2.18, z, 'DESIGN  •  BUILD');
+  createPitWallBanner(2.18, z - 1.5, 'TEST  •  COMPETE');
+}
+
+function addTrackLight(x, z, color) {
+  // Emissive-looking ground lights, no extra dynamic lights for Quest 2.
+  const fixture = new THREE.Mesh(
+    new THREE.CylinderGeometry(.075, .09, .08, 10),
+    new THREE.MeshBasicMaterial({ color })
+  );
+  fixture.position.set(x, .03, z);
+  scene.add(fixture);
+}
+for (let i = 0; i < 9; i++) {
+  const z = START_Z - 1.7 - i * 2.1;
+  addTrackLight(-2.42, z, i % 2 ? '#d6b15f' : '#69d8ff');
+  addTrackLight(2.42, z, i % 2 ? '#d0191c' : '#69d8ff');
+}
+
+function createFeatherFlag(x, z, color, label) {
+  block(.045, 2.42, .045, '#264b67', x, 1.18, z);
+  const flag = createSign(.62, 1.28, 360, 700);
+  const { ctx, el, texture } = flag;
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, el.width, el.height);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(12, 12); ctx.lineTo(el.width - 36, 12); ctx.lineTo(el.width - 10, el.height / 2);
+  ctx.lineTo(el.width - 36, el.height - 12); ctx.lineTo(12, el.height - 12); ctx.closePath(); ctx.fill();
+  text(ctx, 'TSS', 72, 110, 64, '#ffffff', 'left', 900);
+  text(ctx, label, 72, 186, 28, '#f0d38a', 'left', 700);
+  text(ctx, 'STEM RACING', 72, 254, 32, '#ffffff', 'left', 800);
+  texture.needsUpdate = true;
+  flag.mesh.position.set(x + .30, 1.42, z);
+  flag.mesh.rotation.y = x < 0 ? .22 : -.22;
+  scene.add(flag.mesh);
+}
+createFeatherFlag(-3.36, START_Z - 1.6, '#06245a', 'TEAM GARAGE');
+createFeatherFlag(2.96, START_Z - 18.2, '#d0191c', 'TRACKSIDE');
 
 // START LIGHTS ---------------------------------------------------------------
 const lamps = { red: [], green: [] };
@@ -254,20 +407,33 @@ function setLights(numRed, isGreen) {
 setLights(0, false);
 
 // MINIATURE VEHICLES ---------------------------------------------------------
-function carModel(bodyHex, glowHex, lane) {
+function carModel(bodyHex, accentHex, lane, variant = 'navy') {
   const group = new THREE.Group(); group.position.set(lane, 0, START_Z + .3); scene.add(group);
-  const bodyMat = mat(bodyHex, { metalness: .56, roughness: .25 });
+  const bodyMat = mat(bodyHex, { metalness: .58, roughness: .20 });
   const dark = mat('#051220', { roughness: .65 });
-  const metal = mat('#adb8c8', { roughness: .27, metalness: .83 });
-  const glow = new THREE.MeshBasicMaterial({ color: glowHex });
-  block(.40, .18, .92, bodyHex, 0, .27, .06, bodyMat, group);
-  block(.28, .10, .45, '#173c5a', 0, .39, .05, mat('#1a415b', { metalness: .62 }), group);
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(.205, .48, 6), bodyMat);
+  const metal = mat('#dfe8f4', { roughness: .24, metalness: .82 });
+  const accentMat = mat(accentHex, { metalness: .42, roughness: .20 });
+  const goldMat = mat('#d6b15f', { metalness: .45, roughness: .22 });
+  const redMat = mat('#d0191c', { metalness: .36, roughness: .24 });
+  const navyMat = mat('#06245a', { metalness: .44, roughness: .24 });
+  const whiteMat = mat('#eef3fb', { metalness: .22, roughness: .18 });
+  const glow = new THREE.MeshBasicMaterial({ color: variant === 'navy' ? '#f0d38a' : '#ff9158' });
+  const logoMat = tssLogoMaterial();
+  const bodyShell = block(.40, .18, .92, bodyHex, 0, .27, .06, bodyMat, group);
+  bodyShell.scale.x = 1.02;
+  block(.28, .10, .45, '#173c5a', 0, .39, .05, variant === 'navy' ? navyMat : whiteMat, group);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(.205, .48, 6), variant === 'navy' ? navyMat : bodyMat);
   nose.rotation.x = -Math.PI / 2; nose.position.set(0, .255, -.57); group.add(nose);
   block(.81, .065, .14, '#d7e7f1', 0, .24, .55, metal, group);
   block(.66, .050, .12, bodyHex, 0, .21, -.42, bodyMat, group);
   block(.26, .05, .14, '#1a2636', 0, .25, .66, dark, group);
-  block(.08, .04, .22, glowHex, 0, .41, .02, glow, group);
+  block(.08, .04, .22, accentHex, 0, .41, .02, accentMat, group);
+  block(.45, .02, .14, '#d6b15f', 0, .35, -.06, goldMat, group);
+  block(.34, .016, .12, '#d0191c', 0, .355, -.19, redMat, group);
+  block(.07, .06, .38, variant === 'navy' ? '#eef3fb' : '#06245a', -.20, .27, .12, variant === 'navy' ? whiteMat : navyMat, group);
+  block(.07, .06, .38, variant === 'navy' ? '#eef3fb' : '#06245a', .20, .27, .12, variant === 'navy' ? whiteMat : navyMat, group);
+  block(.09, .03, .40, '#d6b15f', -.16, .30, .13, goldMat, group);
+  block(.09, .03, .40, '#d6b15f', .16, .30, .13, goldMat, group);
   for (let front of [-.33, .41]) {
     for (let side of [-1, 1]) {
       const wh = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .115, 14), dark);
@@ -278,13 +444,22 @@ function carModel(bodyHex, glowHex, lane) {
       hub.rotation.z = Math.PI / 2; hub.position.copy(wh.position); group.add(hub);
     }
   }
-  const tailGlow = block(.24, .075, .075, glowHex, 0, .29, .63, glow, group);
-  const trail = block(.15, .02, .10, glowHex, 0, .05, .74, glow, group);
+  const rearWing = block(.30, .06, .12, variant === 'navy' ? '#06245a' : '#d0191c', 0, .33, .67, variant === 'navy' ? navyMat : redMat, group);
+  const tailGlow = block(.24, .075, .075, '#f0d38a', 0, .29, .63, glow, group);
+  const trail = block(.15, .02, .10, '#f0d38a', 0, .05, .74, glow, group);
   trail.visible = false;
+  const sideLeft = new THREE.Mesh(new THREE.PlaneGeometry(.34, .14), logoMat.clone());
+  sideLeft.position.set(-.205, .31, .00); sideLeft.rotation.y = Math.PI / 2; group.add(sideLeft);
+  const sideRight = new THREE.Mesh(new THREE.PlaneGeometry(.34, .14), logoMat.clone());
+  sideRight.position.set(.205, .31, .00); sideRight.rotation.y = -Math.PI / 2; group.add(sideRight);
+  const topLogo = new THREE.Mesh(new THREE.PlaneGeometry(.36, .16), logoMat.clone());
+  topLogo.position.set(0, .445, .02); topLogo.rotation.x = -Math.PI / 2; group.add(topLogo);
+  const rearLogo = new THREE.Mesh(new THREE.PlaneGeometry(.24, .10), logoMat.clone());
+  rearLogo.position.set(0, .33, .735); rearLogo.rotation.y = Math.PI; group.add(rearLogo);
   return { group, trail, tailGlow };
 }
-const playerMesh = carModel('#20c5ee', '#67f9ff', LANES[0]);
-const cpuMesh = carModel('#f85079', '#ffaf6b', LANES[1]);
+const playerMesh = carModel('#06245a', '#d6b15f', LANES[0], 'navy');
+const cpuMesh = carModel('#eef3fb', '#d0191c', LANES[1], 'white');
 
 // IN-WORLD VR BOARDS ---------------------------------------------------------
 const vrTargets = [];
@@ -302,10 +477,13 @@ function makePanel(position, header, subtitle, color) {
   text(ctx, subtitle, 54, 111, 23, '#83bad4', 'left', 600);
   texture.needsUpdate = true;
   t.mesh.position.z = .038; group.add(t.mesh);
+  const teamMark = new THREE.Mesh(new THREE.PlaneGeometry(.42, .24), tssLogoMaterial());
+  teamMark.position.set(.55, .93, .078);
+  group.add(teamMark);
   return group;
 }
-const garageBoard = makePanel([-2.05, 1.67, -2.30], 'TSS STEM RACING', 'DESIGN GARAGE  /  ENGINEER YOUR CAR', '#d6b15f');
-const raceBoard = makePanel([2.05, 1.67, -2.30], 'TSS STEM RACING', 'RACE CONTROL  /  20 M CHALLENGE', '#d6b15f');
+const garageBoard = makePanel([-2.05, 1.67, -2.30], 'TSS STEM RACING', 'DESIGN GARAGE / ENGINEER YOUR RACE CAR', '#d6b15f');
+const raceBoard = makePanel([2.05, 1.67, -2.30], 'TSS STEM RACING', 'RACE CONTROL / 20 M CHALLENGE', '#d6b15f');
 function makeDynamicDisplay(parent, w, h, pos, painter) {
   const display = createSign(w, h, 720, 360);
   display.mesh.position.set(...pos); parent.add(display.mesh);
@@ -313,13 +491,13 @@ function makeDynamicDisplay(parent, w, h, pos, painter) {
   return repaint;
 }
 const repaintGarage = makeDynamicDisplay(garageBoard, 1.50, .72, [0, .46, .075], (ctx) => {
-  rounded(ctx, 5, 5, 710, 350, 27, '#143852', '#ad8a4b');
+  rounded(ctx, 5, 5, 710, 350, 27, '#143852', '#29617a');
   const specs = design();
   text(ctx, `CHASSIS: ${state.mass} g  |  TOTAL: ${specs.massGrams} g`, 32, 54, 33, '#ecfaff');
-  text(ctx, `BODY: ${AERO[state.aero].name.toUpperCase()}`, 32, 128, 32, '#f0d38a');
-  text(ctx, `WHEELS: ${WHEELS[state.wheels].name.toUpperCase()}`, 32, 198, 32, '#f0d38a');
+  text(ctx, `BODY: ${AERO[state.aero].name.toUpperCase()}`, 32, 128, 32, '#60dfff');
+  text(ctx, `WHEELS: ${WHEELS[state.wheels].name.toUpperCase()}`, 32, 198, 32, '#60dfff');
   text(ctx, `CdA ${String((specs.cda * 10000).toFixed(1))} cm²  •  ${specs.rolling.toFixed(2)} N`, 32, 280, 28, '#b2d5e6');
-  text(ctx, 'AIM + TRIGGER: SELECT  |  GRIP: RECENTRE', 32, 328, 22, '#f0d38a');
+  text(ctx, 'AIM + TRIGGER: SELECT   |   GRIP: RECENTRE', 32, 330, 21, '#f0d38a');
 });
 const repaintRace = makeDynamicDisplay(raceBoard, 1.52, .80, [0, .42, .075], (ctx) => {
   rounded(ctx, 5, 5, 710, 350, 27, '#143048', '#386984');
@@ -330,7 +508,7 @@ const repaintRace = makeDynamicDisplay(raceBoard, 1.52, .80, [0, .42, .075], (ct
   text(ctx, `PINK     ${fmt(red)} s`, 32, 215, 50, '#ff8ead');
   const react = state.player?.startedAt != null ? (state.player.startedAt - state.greenAt) / 1000 : NaN;
   text(ctx, `REACTION  ${fmt(react)} s`, 32, 295, 28, '#d1eaff');
-  text(ctx, 'AIM + TRIGGER: SELECT  |  GRIP: RECENTRE', 32, 336, 19, '#f0d38a');
+  text(ctx, 'GRIP: RECENTRE', 32, 334, 22, '#f0d38a');
 });
 function makeButton(parent, label, x, y, w, h, action, accent = '#19708a') {
   const t = createSign(w, h, 560, 180);
@@ -354,10 +532,9 @@ makeButton(garageBoard, 'WHEELS  ▶', .41, -.88, .69, .30, 'wheelUp');
 makeButton(raceBoard, 'STAGE RACE', 0, -.36, 1.42, .40, 'stage', '#087a95');
 makeButton(raceBoard, 'LAUNCH / TRIGGER', 0, -.82, 1.42, .40, 'launch', '#8a2a5b');
 
-// QUEST 2 PIT-WALL CONSOLE -------------------------------------------------
-// Ordinary HTML panels cannot appear in immersive WebXR. Display the
-// interactive three.js control boards directly ahead of the headset.
-// The console is anchored once per entry / grip press, not head-locked.
+// QUEST 2 PIT-WALL CONTROL CONSOLE --------------------------------------------
+// Desktop HTML overlays are not visible inside immersive WebXR.
+// Place a real, selectable 3D console in front of the HMD on entry.
 makeButton(garageBoard, 'RACE CONTROL  >>', 0, 1.26, 1.44, .23, 'showRace', '#a78039');
 makeButton(raceBoard, '<<  DESIGN GARAGE', 0, 1.26, 1.44, .23, 'showGarage', '#a78039');
 const vrConsole = new THREE.Group();
@@ -383,12 +560,11 @@ function placeVRConsole() {
   head.updateMatrixWorld(true);
   head.getWorldPosition(vrHeadPos);
   head.getWorldDirection(vrHeadForward);
-  vrHeadForward.y = 0; // Vertical UI regardless of headset pitch.
+  vrHeadForward.y = 0;
   if (vrHeadForward.lengthSq() < .0001) vrHeadForward.set(0, 0, -1);
   vrHeadForward.normalize();
   vrConsole.position.copy(vrHeadPos).addScaledVector(vrHeadForward, 1.65);
   vrConsole.position.y = Math.max(.92, vrHeadPos.y - .08);
-  // Plane default front normal is +Z; face it back towards the viewer.
   vrConsole.rotation.set(0, Math.atan2(-vrHeadForward.x, -vrHeadForward.z), 0);
   vrConsole.updateMatrixWorld(true);
   vrConsoleNeedsPlacement = false;
@@ -428,7 +604,6 @@ function hitTarget(controller) {
   tempDir.set(0, 0, -1).applyMatrix4(rotation);
   raycaster.set(tempPos, tempDir);
   raycaster.far = 9;
-  // Exclude controls on the inactive board, despite overlapping geometry.
   const visibleTargets = vrTargets.filter((obj) => {
     for (let node = obj; node; node = node.parent) if (!node.visible) return false;
     return true;
@@ -440,7 +615,7 @@ function selectVR(controller) {
   if (target) {
     doAction(target.userData.action);
   } else if (vrView === 'race') {
-    doLaunch(); // free-space trigger can launch from Race Control
+    doLaunch(); // only launch in the Race Control view
   }
 }
 function doAction(action) {
@@ -648,8 +823,7 @@ renderer.setAnimationLoop((now) => {
   if (!renderer.xr.isPresenting) controls.update();
   tick(now, dt);
   renderer.render(scene, camera);
-  // Renderer updates the XR cameras during render(). Placing the console
-  // afterwards uses the tracked headset pose, not a stale/default pose.
+  // The XR camera pose is tracked after rendering. Use it to place the menu.
   if (renderer.xr.isPresenting) {
     if (vrConsoleNeedsPlacement) placeVRConsole();
     for (let i = 0; i < 2; i++) {
